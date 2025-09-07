@@ -1,23 +1,14 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import "./App.css";
+import VisionSystem from "./VisionSystem";
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>Healthcare Gesture Control System</h1>
+      <div style={{ position: "relative", width: "640px", height: "480px" }}>
+        <VisionSystem />
+      </div>
     </div>
   );
 }
