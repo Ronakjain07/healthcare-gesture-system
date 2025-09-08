@@ -9,15 +9,16 @@ import "./App.css";
 
 // --- Configuration Constants ---
 const BLINK_THRESHOLD = 0.23;
-const SLEEP_THRESHOLD_FRAMES = 210; // ~7 seconds
-const AWAKE_THRESHOLD_FRAMES = 210; // ~7 seconds
-const SMILE_THRESHOLD = 0.42;
-const MOUTH_OPEN_THRESHOLD = 0.18;
+const SLEEP_THRESHOLD_FRAMES = 210,
+  AWAKE_THRESHOLD_FRAMES = 210;
+const SMILE_THRESHOLD = 0.42,
+  MOUTH_OPEN_THRESHOLD = 0.18,
+  BROW_FURROW_THRESHOLD = 0.125;
 const BLINK_RESET_FRAMES = 50;
-const NOSE_X_THRESHOLD_LEFT = 0.45,
-  NOSE_X_THRESHOLD_RIGHT = 0.55;
-const NOSE_Y_THRESHOLD_UP = 0.45,
-  NOSE_Y_THRESHOLD_DOWN = 0.6;
+const NOSE_X_THRESHOLD_LEFT = 0.47,
+  NOSE_X_THRESHOLD_RIGHT = 0.53;
+const NOSE_Y_THRESHOLD_UP = 0.43; // CORRECTED: Lowered from 0.47 to make 'Up' less sensitive
+const NOSE_Y_THRESHOLD_DOWN = 0.6;
 const GESTURE_SEQUENCE_FRAMES = 60;
 const GESTURE_ACTIONS = {
   WASHROOM: ["Left", "Right", "Left", "Right"],
@@ -33,13 +34,24 @@ function App() {
 
   const [lastAction, setLastAction] = useState("None");
   const [headPose, setHeadPose] = useState("Center");
-  const [blinkCount, setBlinkCount] = useState(0);
-  const [totalBlinks, setTotalBlinks] = useState(0);
   const [patientStatus, setPatientStatus] = useState("Awake");
   const [currentExpression, setCurrentExpression] = useState("Neutral");
+  const [blinkCount, setBlinkCount] = useState(0);
+  const [totalBlinks, setTotalBlinks] = useState(0);
+  const [blinkRate, setBlinkRate] = useState(0);
+  const [eyeStatus, setEyeStatus] = useState("Open");
+  const [timeSinceLastBlink, setTimeSinceLastBlink] = useState(0);
+  const [noseCoords, setNoseCoords] = useState(null);
 
-  const expressionDurationsRef = useRef({ Happy: 0, Surprised: 0, Neutral: 0 });
+  const expressionDurationsRef = useRef({
+    Happy: 0,
+    Surprised: 0,
+    Neutral: 0,
+    Angry: 0,
+  });
   const lastFrameTimeRef = useRef(performance.now());
+  const blinkTimestampsRef = useRef([]);
+  const lastBlinkTimeRef = useRef(Date.now());
   const consecutiveBlinksRef = useRef(0);
   const inBlinkRef = useRef(false);
   const blinkFrameCounterRef = useRef(0);
@@ -58,7 +70,6 @@ function App() {
       !results.multiFaceLandmarks[0]
     )
       return;
-
     const now = performance.now();
     const deltaTime = (now - lastFrameTimeRef.current) / 1000;
     lastFrameTimeRef.current = now;
@@ -97,7 +108,7 @@ function App() {
       pipCanvasRef.current.height
     );
     drawConnectors(pipCtx, landmarks, FACEMESH_TESSELATION, {
-      color: "#4dff4d70",
+      color: "#00ff8970",
       lineWidth: 0.5,
     });
     pipCtx.restore();
@@ -121,18 +132,21 @@ function App() {
     const leftEAR = calculateEAR(landmarks, LEFT_EYE_INDICES);
     const avgEAR = (leftEAR + rightEAR) / 2.0;
 
+    setEyeStatus(avgEAR < BLINK_THRESHOLD ? "Closed" : "Open");
+
     if (avgEAR < BLINK_THRESHOLD) {
       if (!inBlinkRef.current) {
         inBlinkRef.current = true;
         consecutiveBlinksRef.current++;
         setBlinkCount(consecutiveBlinksRef.current);
         setTotalBlinks((prev) => prev + 1);
+        blinkTimestampsRef.current.push(Date.now());
+        lastBlinkTimeRef.current = Date.now();
       }
       blinkFrameCounterRef.current = 0;
       eyesOpenFrameCounterRef.current = 0;
       eyesClosedFrameCounterRef.current++;
       if (eyesClosedFrameCounterRef.current > SLEEP_THRESHOLD_FRAMES) {
-        // --- FIX #1: Use functional update to avoid stale state ---
         setPatientStatus((currentStatus) =>
           currentStatus === "Awake" ? "Sleeping" : currentStatus
         );
@@ -142,7 +156,6 @@ function App() {
       eyesClosedFrameCounterRef.current = 0;
       eyesOpenFrameCounterRef.current++;
       if (eyesOpenFrameCounterRef.current > AWAKE_THRESHOLD_FRAMES) {
-        // --- FIX #2: Use functional update to avoid stale state ---
         setPatientStatus((currentStatus) =>
           currentStatus === "Sleeping" ? "Awake" : currentStatus
         );
@@ -184,16 +197,14 @@ function App() {
     if (nose) {
       const mirroredX = 1.0 - nose.x;
       const noseY = nose.y;
+      setNoseCoords({ x: mirroredX, y: noseY });
       let currentDirection = "Center";
-      const deltaX = Math.abs(mirroredX - 0.5);
-      const deltaY = Math.abs(noseY - 0.5);
-      if (deltaX > deltaY) {
-        if (mirroredX < NOSE_X_THRESHOLD_LEFT) currentDirection = "Left";
-        else if (mirroredX > NOSE_X_THRESHOLD_RIGHT) currentDirection = "Right";
-      } else {
-        if (noseY < NOSE_Y_THRESHOLD_UP) currentDirection = "Up";
-        else if (noseY > NOSE_Y_THRESHOLD_DOWN) currentDirection = "Down";
-      }
+
+      if (mirroredX < NOSE_X_THRESHOLD_LEFT) currentDirection = "Left";
+      else if (mirroredX > NOSE_X_THRESHOLD_RIGHT) currentDirection = "Right";
+      else if (noseY < NOSE_Y_THRESHOLD_UP) currentDirection = "Up";
+      else if (noseY > NOSE_Y_THRESHOLD_DOWN) currentDirection = "Down";
+
       setHeadPose(currentDirection);
       processHeadGesture(currentDirection);
     }
@@ -204,13 +215,17 @@ function App() {
       bottomLip = landmarks[14];
     const leftFace = landmarks[234],
       rightFace = landmarks[454];
+    const innerLeftBrow = landmarks[55],
+      innerRightBrow = landmarks[285];
     if (
       leftMouth &&
       rightMouth &&
       topLip &&
       bottomLip &&
       leftFace &&
-      rightFace
+      rightFace &&
+      innerLeftBrow &&
+      innerRightBrow
     ) {
       const mouthWidth = euclideanDistance(leftMouth, rightMouth);
       const faceWidth = euclideanDistance(leftFace, rightFace);
@@ -218,13 +233,15 @@ function App() {
       const mouthHeight = euclideanDistance(topLip, bottomLip);
       const faceHeight = Math.abs(landmarks[10].y - landmarks[152].y);
       const mouthOpenRatio = mouthHeight / faceHeight;
+      const browDistance = euclideanDistance(innerLeftBrow, innerRightBrow);
+      const browFurrowRatio = browDistance / faceWidth;
 
       let detectedExpression = "Neutral";
-      if (smileRatio > SMILE_THRESHOLD) {
-        detectedExpression = "Happy";
-      } else if (mouthOpenRatio > MOUTH_OPEN_THRESHOLD) {
+      if (smileRatio > SMILE_THRESHOLD) detectedExpression = "Happy";
+      else if (mouthOpenRatio > MOUTH_OPEN_THRESHOLD)
         detectedExpression = "Surprised";
-      }
+      else if (browFurrowRatio < BROW_FURROW_THRESHOLD)
+        detectedExpression = "Angry";
 
       setCurrentExpression(detectedExpression);
       expressionDurationsRef.current[detectedExpression] += deltaTime;
@@ -282,6 +299,18 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      const oneMinuteAgo = Date.now() - 60000;
+      blinkTimestampsRef.current = blinkTimestampsRef.current.filter(
+        (ts) => ts > oneMinuteAgo
+      );
+      setBlinkRate(blinkTimestampsRef.current.length);
+      setTimeSinceLastBlink((Date.now() - lastBlinkTimeRef.current) / 1000);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const faceMesh = new FaceMesh({
       locateFile: (file) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`,
@@ -308,20 +337,29 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Healthcare Gesture Control System</h1>
-      <div className="container">
-        <Webcam ref={webcamRef} className="webcam" />
-        <canvas ref={canvasRef} className="canvas" />
-        <canvas ref={pipCanvasRef} className="pip-canvas" />
+      <div className="master-container">
+        <h1 className="main-title">Healthcare Gesture Control System</h1>
+        <div className="container">
+          <Webcam ref={webcamRef} className="webcam" />
+          <canvas ref={canvasRef} className="canvas" />
+          <canvas ref={pipCanvasRef} className="pip-canvas" />
+        </div>
+        <Metrics
+          blinkCount={blinkCount}
+          totalBlinks={totalBlinks}
+          blinkRate={blinkRate}
+          eyeStatus={eyeStatus}
+          timeSinceLastBlink={timeSinceLastBlink}
+          currentExpression={currentExpression}
+          happyDuration={expressionDurationsRef.current.Happy}
+          surprisedDuration={expressionDurationsRef.current.Surprised}
+          angryDuration={expressionDurationsRef.current.Angry}
+          headPose={headPose}
+          noseCoords={noseCoords}
+          lastAction={lastAction}
+          patientStatus={patientStatus}
+        />
       </div>
-      <Metrics
-        blinkCount={blinkCount}
-        lastAction={lastAction}
-        totalBlinks={totalBlinks}
-        headPose={headPose}
-        patientStatus={patientStatus}
-        currentExpression={currentExpression}
-      />
     </div>
   );
 }

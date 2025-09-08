@@ -2,26 +2,42 @@
 body {
   background-color: #282c34;
   margin: 0;
-  font-family: sans-serif;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .App {
   text-align: center;
-  display: flex;
-  flex-direction: column;
+}
+
+/* New layout using CSS Grid */
+.master-container {
+  display: grid;
+  grid-template-columns: 200px 640px 200px; /* Left sidebar, main content, right sidebar */
+  grid-template-rows: auto 1fr; /* Title row, main content row */
+  grid-gap: 20px;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+}
+
+.main-title {
+  grid-column: 1 / -1; /* Span all columns */
+  margin-bottom: 10px;
 }
 
 .container {
+  grid-column: 2 / 3; /* Place in the center column */
   position: relative;
   width: 640px;
   height: 480px;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .webcam,
@@ -43,13 +59,14 @@ body {
 
 .pip-canvas {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 15px;
+  right: 15px;
   width: 160px;
   height: 120px;
-  border: 2px solid #4dff4d;
+  border: 2px solid #00ff89;
   border-radius: 8px;
-  background-color: rgba(40, 44, 52, 0.7);
+  background-color: rgba(20, 22, 25, 0.7);
   transform: scaleX(-1);
   z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }

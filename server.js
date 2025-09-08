@@ -8,7 +8,6 @@ const token = "8350824476:AAEk31F_TaraYZBfwltuBU9Ebvc11AV4b-k";
 
 // Get your Chat ID from @userinfobot on Telegram
 const chatId = "1283168709";
-// server.js
 const bot = new TelegramBot(token, { polling: true });
 const app = express();
 
@@ -16,14 +15,13 @@ app.use(cors());
 app.use(express.json());
 
 let currentPatientStatus = "Awake";
-// Variable to store expression durations
 let expressionDurations = {
   Happy: 0,
   Surprised: 0,
   Neutral: 0,
+  Angry: 0,
 };
 
-// Endpoint for gesture alerts
 app.post("/notify", (req, res) => {
   const { message } = req.body;
   if (!message) {
@@ -41,7 +39,6 @@ app.post("/notify", (req, res) => {
     });
 });
 
-// Endpoint for the React app to continuously update the server's status
 app.post("/update-status", (req, res) => {
   const { status } = req.body;
   if (status) {
@@ -52,7 +49,6 @@ app.post("/update-status", (req, res) => {
   }
 });
 
-// Endpoint for the React app to update expression data
 app.post("/update-expressions", (req, res) => {
   const { durations } = req.body;
   if (durations) {
@@ -63,14 +59,12 @@ app.post("/update-expressions", (req, res) => {
   }
 });
 
-// Listen for the '/status' command
 bot.onText(/\/status|\/sleep status/i, (msg) => {
   const fromId = msg.chat.id;
   const reply = `The patient's current status is: *${currentPatientStatus}*`;
   bot.sendMessage(fromId, reply, { parse_mode: "Markdown" });
 });
 
-// Listen for the '/expressioninfo' command
 bot.onText(/\/expressioninfo/i, (msg) => {
   const fromId = msg.chat.id;
   let reply = "*Patient Expression Report:*\n\n";

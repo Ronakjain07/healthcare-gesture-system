@@ -1,96 +1,112 @@
 // src/Metrics.js
 import React from "react";
+import "./Metrics.css"; // We will create this new CSS file
 
-const metricStyle = {
-  backgroundColor: "#333",
-  borderRadius: "8px",
-  padding: "15px",
-  margin: "10px",
-  minWidth: "150px",
-  textAlign: "center",
-};
-
-const valueStyle = {
-  fontSize: "2rem",
-  fontWeight: "bold",
-  color: "#4dff4d",
-};
-
-const labelStyle = {
-  fontSize: "1rem",
-  color: "#ccc",
-};
+const MetricBox = ({ value, label, color, largeValue }) => (
+  <div className="metric-box">
+    <div
+      className="metric-value"
+      style={{ color: color, fontSize: largeValue ? "2.1rem" : "1.8rem" }}
+    >
+      {value}
+    </div>
+    <div className="metric-label">{label}</div>
+  </div>
+);
 
 const Metrics = ({
   blinkCount,
-  lastAction,
   totalBlinks,
-  headPose,
-  patientStatus,
+  blinkRate,
+  eyeStatus,
+  timeSinceLastBlink,
   currentExpression,
+  happyDuration,
+  surprisedDuration,
+  angryDuration,
+  headPose,
+  noseCoords,
+  lastAction,
+  patientStatus,
 }) => {
   return (
-    <div
-      style={{
-        zIndex: 10,
-        display: "flex",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        marginTop: "20px",
-      }}
-    >
-      <div style={{ ...metricStyle, backgroundColor: "#a67c00" }}>
-        <div
-          style={{
-            ...valueStyle,
-            color: "#ffd700",
-            fontSize: "1.5rem",
-            minHeight: "38px",
-          }}
-        >
-          {currentExpression || "Neutral"}
-        </div>
-        <div style={labelStyle}>Current Expression</div>
+    <>
+      <div className="left-bar">
+        <div className="bar-title">Expressions</div>
+        <MetricBox
+          value={currentExpression}
+          label="Current Expression"
+          color="#ffd700"
+          largeValue={true}
+        />
+        <MetricBox
+          value={`${Math.round(happyDuration)}s`}
+          label="Happy Duration"
+          color="#ffd700"
+        />
+        <MetricBox
+          value={`${Math.round(surprisedDuration)}s`}
+          label="Surprised Duration"
+          color="#ffd700"
+        />
+        <MetricBox
+          value={`${Math.round(angryDuration)}s`}
+          label="Angry/Stressed"
+          color="#ffd700"
+        />
       </div>
-      <div style={{ ...metricStyle, backgroundColor: "#5c3c8a" }}>
-        <div
-          style={{
-            ...valueStyle,
-            color: "#d9a9ff",
-            fontSize: "1.5rem",
-            minHeight: "38px",
-          }}
-        >
-          {patientStatus || "Awake"}
-        </div>
-        <div style={labelStyle}>Patient Status</div>
+
+      <div className="right-bar">
+        <div className="bar-title">Head Pose</div>
+        <MetricBox
+          value={headPose}
+          label="Current Pose"
+          color="#77aaff"
+          largeValue={true}
+        />
+        <MetricBox
+          value={
+            noseCoords
+              ? `X:${noseCoords.x.toFixed(2)} Y:${noseCoords.y.toFixed(2)}`
+              : "N/A"
+          }
+          label="Nose Coordinates"
+          color="#77aaff"
+        />
+        <MetricBox
+          value={patientStatus}
+          label="Patient Status"
+          color="#d9a9ff"
+          largeValue={true}
+        />
       </div>
-      <div style={metricStyle}>
-        <div style={valueStyle}>{blinkCount}</div>
-        <div style={labelStyle}>Consecutive Blinks</div>
+
+      <div className="bottom-bar">
+        <MetricBox
+          value={blinkCount}
+          label="Consecutive Blinks"
+          color="#4dff4d"
+        />
+        <MetricBox value={totalBlinks} label="Total Blinks" color="#4dff4d" />
+        <MetricBox
+          value={`${blinkRate} BPM`}
+          label="Blink Rate"
+          color="#4dff4d"
+        />
+        <MetricBox value={eyeStatus} label="Eye Status" color="#4dff4d" />
+        <MetricBox
+          value={`${Math.round(timeSinceLastBlink)}s`}
+          label="Time Since Blink"
+          color="#4dff4d"
+        />
+        <MetricBox
+          value={lastAction}
+          label="Last Action Triggered"
+          color="#FFFFFF"
+          largeValue={true}
+        />
       </div>
-      <div style={metricStyle}>
-        <div style={valueStyle}>{totalBlinks}</div>
-        <div style={labelStyle}>Total Blinks</div>
-      </div>
-      <div style={{ ...metricStyle, backgroundColor: "#223355" }}>
-        <div
-          style={{
-            ...valueStyle,
-            color: "#77aaff",
-            fontSize: "1.5rem",
-            minHeight: "38px",
-          }}
-        >
-          {headPose || "Center"}
-        </div>
-        <div style={labelStyle}>Head Pose</div>
-      </div>
-      <div style={metricStyle}>
-        <div style={valueStyle}>{lastAction || "None"}</div>
-        <div style={labelStyle}>Last Action</div>
-      </div>
-    </div>
+    </>
   );
 };
 
