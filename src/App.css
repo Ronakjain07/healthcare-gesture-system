@@ -2,11 +2,8 @@
 body {
   background-color: #282c34;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: sans-serif;
+  color: white;
 }
 
 .App {
@@ -16,5 +13,30 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  color: white;
+}
+
+.container {
+  position: relative;
+  width: 640px;
+  height: 480px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.webcam,
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* This is the fix for mirroring the camera view */
+.canvas {
+  transform: scaleX(-1);
+}
+
+.webcam {
+  visibility: hidden;
 }

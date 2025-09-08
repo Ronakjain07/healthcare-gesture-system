@@ -21,23 +21,21 @@ const labelStyle = {
   color: "#ccc",
 };
 
-// Add totalBlinks to the props
-const Metrics = ({ blinkCount, lastAction, currentEAR, totalBlinks }) => {
+const Metrics = ({ blinkCount, lastAction, totalBlinks, headPose }) => {
   return (
     <div
       style={{
-        position: "absolute",
-        bottom: "20px",
-        left: "20px",
         zIndex: 10,
         display: "flex",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        marginTop: "20px",
       }}
     >
       <div style={metricStyle}>
         <div style={valueStyle}>{blinkCount}</div>
         <div style={labelStyle}>Consecutive Blinks</div>
       </div>
-      {/* New Metric Box for Total Blinks */}
       <div style={metricStyle}>
         <div style={valueStyle}>{totalBlinks}</div>
         <div style={labelStyle}>Total Blinks</div>
@@ -46,11 +44,18 @@ const Metrics = ({ blinkCount, lastAction, currentEAR, totalBlinks }) => {
         <div style={valueStyle}>{lastAction || "None"}</div>
         <div style={labelStyle}>Last Action</div>
       </div>
-      <div style={{ ...metricStyle, backgroundColor: "#552222" }}>
-        <div style={{ ...valueStyle, color: "#ff7777" }}>
-          {(currentEAR || 0).toFixed(2)}
+      <div style={{ ...metricStyle, backgroundColor: "#223355" }}>
+        <div
+          style={{
+            ...valueStyle,
+            color: "#77aaff",
+            fontSize: "1.5rem",
+            minHeight: "38px",
+          }}
+        >
+          {headPose || "Center"}
         </div>
-        <div style={labelStyle}>Current EAR</div>
+        <div style={labelStyle}>Head Pose</div>
       </div>
     </div>
   );
